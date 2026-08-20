@@ -83,7 +83,7 @@ lamar-rag-chatbot/
 
 ### 3.1 Requisitos previos
 
-- Python 3.12 (recomendado; 3.11 también funciona)
+- Python 3.11 o superior (probado en 3.13)
 - Una cuenta de AWS con acceso a **Bedrock** y a **RDS**
 - El PDF del Reglamento SEP R-0
 
@@ -113,11 +113,11 @@ El detalle de cómo obtener cada valor está en [`infra/aws_setup.md`](infra/aws
 
 ### 3.4 Ingesta del reglamento
 
-Coloca el PDF en `data/raw/reglamento_sep_r0.pdf` y verifica **primero** la
+Coloca el PDF en `data/raw/REGLAMENTO_GENERAL_DE_ALUMNOS_DE_LICENCIATURAS_Y_POSGRADOS_SEP_R-0.pdf` y verifica **primero** la
 segmentación, antes de gastar llamadas a Bedrock:
 
 ```bash
-python scripts_ingestion/ingest.py --pdf data/raw/reglamento_sep_r0.pdf --dry-run
+python scripts_ingestion/ingest.py --pdf data/raw/REGLAMENTO_GENERAL_DE_ALUMNOS_DE_LICENCIATURAS_Y_POSGRADOS_SEP_R-0.pdf --dry-run
 ```
 
 Salida esperada (números aproximados según el documento):
@@ -134,14 +134,14 @@ Si el conteo de artículos no cuadra con el PDF, el problema está en la
 extracción, no en el RAG. Inspecciona con:
 
 ```bash
-python scripts_ingestion/probar_chunker.py --pdf data/raw/reglamento_sep_r0.pdf --listar
-python scripts_ingestion/probar_chunker.py --pdf data/raw/reglamento_sep_r0.pdf --ver 4
+python scripts_ingestion/probar_chunker.py --pdf data/raw/REGLAMENTO_GENERAL_DE_ALUMNOS_DE_LICENCIATURAS_Y_POSGRADOS_SEP_R-0.pdf --listar
+python scripts_ingestion/probar_chunker.py --pdf data/raw/REGLAMENTO_GENERAL_DE_ALUMNOS_DE_LICENCIATURAS_Y_POSGRADOS_SEP_R-0.pdf --ver 4
 ```
 
 Cuando el reporte se vea correcto, corre la ingesta real:
 
 ```bash
-python scripts_ingestion/ingest.py --pdf data/raw/reglamento_sep_r0.pdf --recrear
+python scripts_ingestion/ingest.py --pdf data/raw/REGLAMENTO_GENERAL_DE_ALUMNOS_DE_LICENCIATURAS_Y_POSGRADOS_SEP_R-0.pdf --recrear
 ```
 
 ### 3.5 Levantar la aplicación
@@ -155,6 +155,68 @@ uvicorn backend.main:app --reload
 | <http://localhost:8000> | Interfaz de chat |
 | <http://localhost:8000/docs> | Documentación Swagger |
 | <http://localhost:8000/api/salud> | Diagnóstico de BD y modelos |
+
+---
+
+### 3.6 Puesta en marcha para el resto del equipo
+
+Quien clona el repositorio no recibe ni los secretos ni el PDF: ambos están en
+`.gitignore` a propósito. Estos son los cuatro pasos que faltan, y el primero
+**no lo puede hacer quien clona** — depende de quien administra la instancia.
+
+#### 1. Autorizar su IP en el security group (lo hace el dueño de la instancia)
+
+La base solo acepta conexiones desde las IPs listadas en `reglamento-sg`. Si la
+IP del nuevo integrante no está, la conexión **se queda colgada hasta agotar el
+timeout, sin mensaje de error útil** — es el fallo más confuso de todos.
+
+En **RDS → reglamento-lamar → Connectivity & security → security group →
+Inbound rules → Add rule**, agrega una regla `PostgreSQL / 5432` con la IP del
+integrante. Cada quien puede consultar la suya en <https://checkip.amazonaws.com>.
+
+> Esa IP cambia al moverse de red (casa → universidad). Si de un día para otro
+> deja de conectar, esto es lo primero que hay que revisar.
+
+#### 2. Crear el `.env`
+
+```bash
+cp .env.example .env      # Windows: copy .env.example .env
+```
+
+Y llenar tres valores. Los dos primeros son idénticos para todo el equipo,
+porque apuntan a la misma base:
+
+| Variable | De dónde sale |
+|---|---|
+| `PGHOST` | El endpoint de RDS; el mismo para todos |
+| `PGPASSWORD` | La contraseña maestra que se definió al crear la instancia |
+| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys (puede ser compartida) |
+
+#### 3. Configurar credenciales de AWS
+
+**Cada integrante necesita las suyas**, aunque la base ya esté cargada: cada
+pregunta del usuario se convierte en vector con Titan en el momento de
+consultar, así que el chat llama a Bedrock en cada turno.
+
+Se necesita un usuario IAM con la política de la Parte 1 de
+[`infra/aws_setup.md`](infra/aws_setup.md), y sus llaves en `~/.aws/credentials`
+(vía `aws configure` o escribiendo el archivo a mano).
+
+#### 4. El PDF, solo si se va a re-ingestar
+
+`data/raw/*.pdf` está excluido del repositorio. Para **usar** el chatbot no hace
+falta: los 217 chunks ya viven en la base. Solo hay que colocarlo si se quiere
+volver a correr `ingest.py`.
+
+#### Comprobar que quedó
+
+```bash
+python scripts_ingestion/probar_bedrock.py   # ¿responden Titan y Claude?
+uvicorn backend.main:app --reload            # y luego /api/salud
+```
+
+`/api/salud` debe reportar `"estado": "ok"` con 217 chunks. Si marca error de
+base de datos, es el paso 1. Si `probar_bedrock.py` falla, es el paso 3.
 
 ---
 
