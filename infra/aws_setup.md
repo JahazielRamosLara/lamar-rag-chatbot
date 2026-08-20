@@ -344,11 +344,42 @@ ORDER BY embedding <=> (SELECT embedding FROM reglamento_chunks LIMIT 1)
 LIMIT 5;
 ```
 
-Debe aparecer `Index Scan using idx_reglamento_embedding_hnsw`. Si aparece
-`Seq Scan`, es porque hay muy pocas filas y el planificador decide que el
-recorrido secuencial es más barato — con el reglamento completo usará el índice.
+**Con el reglamento completo cargado, esto muestra `Seq Scan`, no el índice.**
+No es un error de configuración: el reglamento son 217 filas, y a esa escala el
+planificador calcula —correctamente— que recorrer la tabla entera cuesta menos
+que descender por el grafo del índice. Un índice HNSW rinde cuando hay decenas
+de miles de vectores.
 
-> 📸 **Captura 9:** el `EXPLAIN ANALYZE` mostrando el uso del índice HNSW.
+Para demostrar que el índice existe y funciona, desactiva el recorrido
+secuencial y vuelve a pedir el plan:
+
+```sql
+SET enable_seqscan = off;
+
+EXPLAIN ANALYZE
+SELECT chunk_uid
+FROM reglamento_chunks
+ORDER BY embedding <=> (SELECT embedding FROM reglamento_chunks LIMIT 1)
+LIMIT 5;
+
+RESET enable_seqscan;
+```
+
+Ahora sí aparece `Index Scan using idx_reglamento_embedding_hnsw`. Medido sobre
+esta base:
+
+| Plan | Tiempo | Buffers leídos |
+|---|---|---|
+| Seq Scan (el que elige solo) | 2.17 ms | 1658 |
+| Index Scan HNSW (forzado) | 1.08 ms | 337 |
+
+El índice es el doble de rápido y toca la quinta parte de los bloques, pero el
+margen absoluto es de un milisegundo: por eso el planificador no se molesta.
+
+> 📸 **Captura 9:** los dos `EXPLAIN ANALYZE`, el normal y el forzado. Explicar
+> esta diferencia en el video vale más que enseñar solo el que sale bonito:
+> demuestra que entiendes qué hace el planificador y cuándo un índice vectorial
+> se justifica.
 
 ---
 

@@ -10,6 +10,7 @@ sentido y el RAG devuelve basura.
 
 from __future__ import annotations
 
+import ssl
 from functools import lru_cache
 from pathlib import Path
 
@@ -91,15 +92,39 @@ class Settings(BaseSettings):
     def asyncpg_kwargs(self) -> dict:
         """
         asyncpg no entiende el parametro `sslmode` de libpq: usa `ssl`.
-        RDS exige TLS, asi que traducimos aqui en vez de en cada llamada.
+
+        Y no basta con pasarle `True`: eso construye un contexto que ademas
+        VERIFICA el certificado del servidor, mientras que `sslmode=require`
+        en libpq solo pide cifrado, sin verificar. Por eso psycopg (la ingesta)
+        conectaba y asyncpg (el backend) fallaba contra la misma base con
+        CERTIFICATE_VERIFY_FAILED: RDS presenta su propia CA, que no esta en el
+        almacen de confianza del sistema.
+
+        Aqui se replica la semantica de libpq: cifrar siempre, y verificar solo
+        cuando el usuario lo pidio explicitamente con verify-ca / verify-full.
         """
+        modo = self.pgsslmode.strip().lower()
+
+        if modo in ("disable", "allow"):
+            contexto: ssl.SSLContext | bool = False
+        elif modo in ("verify-ca", "verify-full"):
+            # Requiere que la CA de RDS este instalada en el sistema o que se
+            # apunte a global-bundle.pem; si no, la conexion fallara aqui.
+            contexto = ssl.create_default_context()
+            if modo == "verify-ca":
+                contexto.check_hostname = False
+        else:  # require / prefer: cifrado sin verificacion
+            contexto = ssl.create_default_context()
+            contexto.check_hostname = False
+            contexto.verify_mode = ssl.CERT_NONE
+
         return {
             "host": self.pghost,
             "port": self.pgport,
             "database": self.pgdatabase,
             "user": self.pguser,
             "password": self.pgpassword,
-            "ssl": self.pgsslmode not in ("disable", "allow"),
+            "ssl": contexto,
         }
 
 
