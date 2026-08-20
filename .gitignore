@@ -1,0 +1,23 @@
+# Secretos y configuracion local
+.env
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+*.egg-info/
+
+# Datos generados por la ingesta
+data/processed/
+data/raw/*.pdf
+!data/raw/.gitkeep
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,13 @@
+Coloca aqui el PDF oficial:
+
+    Reglamento General de Alumnos de Licenciaturas y Posgrados (SEP R-0)
+
+Nombre sugerido del archivo:
+
+    reglamento_sep_r0.pdf
+
+Luego corre desde la raiz del proyecto:
+
+    python scripts_ingestion/ingest.py --pdf data/raw/reglamento_sep_r0.pdf
+
+Este archivo esta ignorado por git (ver .gitignore) para no subir el PDF al repo.

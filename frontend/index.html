@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reglamento SEP R-0 — Asistente LAMAR</title>
+<style>
+  /* Sin CDN ni build: todo el estilo va aquí para que la interfaz funcione
+     aunque la máquina del demo no tenga internet. */
+  :root {
+    --fondo:        #0f1420;
+    --panel:        #171d2b;
+    --panel-alto:   #1e2637;
+    --borde:        #2a3448;
+    --texto:        #e6ebf5;
+    --texto-suave:  #93a0b8;
+    --acento:       #4f8cff;
+    --acento-suave: #1c2f52;
+    --exito:        #34d399;
+    --alerta:       #fbbf24;
+    --error:        #f87171;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- Encabezado ---------- */
+  header {
+    padding: 14px 22px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--borde);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .marca { font-weight: 700; font-size: 1.05rem; letter-spacing: .2px; }
+  .marca span { color: var(--acento); }
+  .subtitulo { color: var(--texto-suave); font-size: .82rem; }
+  .estado {
+    margin-left: auto;
+    font-size: .76rem;
+    color: var(--texto-suave);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--panel-alto);
+    padding: 6px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--borde);
+  }
+  .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--texto-suave); }
+  .punto.ok    { background: var(--exito); }
+  .punto.aviso { background: var(--alerta); }
+  .punto.mal   { background: var(--error); }
+
+  /* ---------- Conversación ---------- */
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 26px 20px;
+  }
+  .hilo { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+  .mensaje { display: flex; gap: 12px; align-items: flex-start; }
+  .mensaje.usuario { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 9px;
+    display: grid; place-items: center;
+    font-size: .72rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .avatar.bot { background: var(--acento-suave); color: var(--acento); }
+  .avatar.yo  { background: #2b3348; color: var(--texto-suave); }
+
+  .burbuja {
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: 13px;
+    padding: 13px 16px;
+    line-height: 1.62;
+    max-width: 78%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .mensaje.usuario .burbuja {
+    background: var(--acento-suave);
+    border-color: #2f4b7f;
+  }
+
+  /* ---------- Fuentes citadas ---------- */
+  .fuentes { margin-top: 11px; border-top: 1px solid var(--borde); padding-top: 9px; }
+  .fuentes summary {
+    cursor: pointer;
+    color: var(--texto-suave);
+    font-size: .79rem;
+    user-select: none;
+  }
+  .fuentes summary:hover { color: var(--acento); }
+  .fuente {
+    margin-top: 9px;
+    background: var(--panel-alto);
+    border: 1px solid var(--borde);
+    border-left: 3px solid var(--acento);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: .81rem;
+  }
+  .fuente-cabecera {
+    display: flex; justify-content: space-between; gap: 10px;
+    color: var(--acento); font-weight: 600; margin-bottom: 4px;
+  }
+  .fuente-meta  { color: var(--texto-suave); font-weight: 400; font-size: .74rem; }
+  .fuente-texto { color: var(--texto-suave); line-height: 1.5; }
+
+  .etiquetas { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 9px; }
+  .etiqueta {
+    font-size: .7rem;
+    background: var(--panel-alto);
+    border: 1px solid var(--borde);
+    color: var(--texto-suave);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  /* ---------- Indicador de carga ---------- */
+  .cargando { display: flex; gap: 5px; padding: 5px 2px; }
+  .cargando i {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--acento);
+    animation: pulso 1.3s infinite ease-in-out;
+  }
+  .cargando i:nth-child(2) { animation-delay: .18s; }
+  .cargando i:nth-child(3) { animation-delay: .36s; }
+  @keyframes pulso {
+    0%, 80%, 100% { opacity: .25; transform: translateY(0); }
+    40%           { opacity: 1;   transform: translateY(-4px); }
+  }
+
+  /* ---------- Bienvenida ---------- */
+  .bienvenida { text-align: center; padding: 34px 12px; color: var(--texto-suave); }
+  .bienvenida h2 { color: var(--texto); margin: 0 0 8px; font-size: 1.25rem; }
+  .bienvenida p  { margin: 0 auto 22px; max-width: 520px; line-height: 1.6; font-size: .9rem; }
+  .ejemplos { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; }
+  .ejemplo {
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    color: var(--texto);
+    padding: 9px 14px;
+    border-radius: 999px;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .ejemplo:hover { border-color: var(--acento); color: var(--acento); }
+
+  /* ---------- Entrada ---------- */
+  footer {
+    padding: 14px 20px 20px;
+    background: var(--panel);
+    border-top: 1px solid var(--borde);
+  }
+  .caja {
+    max-width: 860px; margin: 0 auto;
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+  textarea {
+    flex: 1;
+    background: var(--panel-alto);
+    border: 1px solid var(--borde);
+    border-radius: 11px;
+    color: var(--texto);
+    padding: 12px 14px;
+    font: inherit;
+    font-size: .93rem;
+    resize: none;
+    max-height: 150px;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--acento); }
+  button.enviar {
+    background: var(--acento);
+    color: #fff;
+    border: 0;
+    border-radius: 11px;
+    padding: 12px 20px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .15s;
+  }
+  button.enviar:hover:not(:disabled) { background: #3d78e8; }
+  button.enviar:disabled { opacity: .45; cursor: not-allowed; }
+  .pie { max-width: 860px; margin: 9px auto 0; font-size: .72rem; color: var(--texto-suave); }
+
+  @media (max-width: 640px) {
+    .burbuja { max-width: 88%; }
+    .subtitulo { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="marca">Universidad <span>LAMAR</span> · Asistente Normativo</div>
+    <div class="subtitulo">Reglamento General de Alumnos de Licenciaturas y Posgrados (SEP R-0)</div>
+  </div>
+  <div class="estado" id="estado">
+    <span class="punto" id="punto"></span>
+    <span id="estado-texto">Verificando…</span>
+  </div>
+</header>
+
+<main id="main">
+  <div class="hilo" id="hilo">
+    <div class="bienvenida" id="bienvenida">
+      <h2>¿Qué necesitas consultar del reglamento?</h2>
+      <p>
+        Pregunta con tus palabras o pide un artículo concreto. Cada respuesta se
+        construye únicamente con fragmentos recuperados del reglamento y viene
+        con sus fuentes citadas.
+      </p>
+      <div class="ejemplos" id="ejemplos"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="caja">
+    <textarea id="entrada" rows="1"
+              placeholder="Escribe tu pregunta…  (Enter para enviar, Shift+Enter para salto de línea)"></textarea>
+    <button class="enviar" id="enviar">Enviar</button>
+  </div>
+  <div class="pie">
+    Las respuestas provienen del reglamento vigente. Ante cualquier duda, confirma con Control Escolar.
+  </div>
+</footer>
+
+<script>
+const API = "";                 // mismo origen que sirve esta página
+const hilo       = document.getElementById("hilo");
+const main       = document.getElementById("main");
+const entrada    = document.getElementById("entrada");
+const botonEnvia = document.getElementById("enviar");
+const bienvenida = document.getElementById("bienvenida");
+
+// Historial que se manda al backend para dar continuidad a la conversación.
+let historial = [];
+let ocupado   = false;
+
+const EJEMPLOS = [
+  "¿Qué dice el artículo 4 del reglamento?",
+  "Dame el artículo 9",
+  "¿Cuánta asistencia necesito para presentar examen?",
+  "¿Qué pasa si repruebo tres veces la misma materia?",
+  "¿Qué requisitos hay para inscribirme?",
+  "¿Qué dice el capítulo III?"
+];
+
+// ---------------------------------------------------------------------------
+// Utilidades
+// ---------------------------------------------------------------------------
+
+function escapar(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto;
+  return div.innerHTML;
+}
+
+// Resalta las citas "(Artículo N°)" que devuelve el modelo.
+function resaltarCitas(html) {
+  return html.replace(
+    /\(Art[íi]culos?\s+[^)]{1,40}\)/gi,
+    m => `<strong style="color:var(--acento)">${m}</strong>`
+  );
+}
+
+function alFinal() {
+  main.scrollTop = main.scrollHeight;
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+
+function agregarMensaje(rol, texto) {
+  bienvenida?.remove();
+
+  const fila = document.createElement("div");
+  fila.className = "mensaje " + (rol === "user" ? "usuario" : "bot");
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar " + (rol === "user" ? "yo" : "bot");
+  avatar.textContent = rol === "user" ? "TÚ" : "LMR";
+
+  const burbuja = document.createElement("div");
+  burbuja.className = "burbuja";
+  burbuja.innerHTML = resaltarCitas(escapar(texto));
+
+  fila.append(avatar, burbuja);
+  hilo.appendChild(fila);
+  alFinal();
+  return burbuja;
+}
+
+function mostrarCargando() {
+  const fila = document.createElement("div");
+  fila.className = "mensaje bot";
+  fila.id = "cargando";
+  fila.innerHTML = `
+    <div class="avatar bot">LMR</div>
+    <div class="burbuja"><div class="cargando"><i></i><i></i><i></i></div></div>`;
+  hilo.appendChild(fila);
+  alFinal();
+}
+
+function quitarCargando() {
+  document.getElementById("cargando")?.remove();
+}
+
+function agregarFuentes(burbuja, datos) {
+  const etiquetas = document.createElement("div");
+  etiquetas.className = "etiquetas";
+  etiquetas.innerHTML = `
+    <span class="etiqueta">búsqueda: ${escapar(datos.estrategia)}</span>
+    <span class="etiqueta">${datos.fuentes.length} fragmentos</span>
+    <span class="etiqueta">${datos.ms} ms</span>`;
+  burbuja.appendChild(etiquetas);
+
+  if (!datos.fuentes.length) return;
+
+  const detalle = document.createElement("details");
+  detalle.className = "fuentes";
+  detalle.innerHTML = `<summary>Ver los ${datos.fuentes.length} fragmentos citados del reglamento</summary>`;
+
+  for (const f of datos.fuentes) {
+    const caja = document.createElement("div");
+    caja.className = "fuente";
+    const contexto = [f.capitulo, f.titulo].filter(Boolean).join(" · ");
+    caja.innerHTML = `
+      <div class="fuente-cabecera">
+        <span>${escapar(f.encabezado)}</span>
+        <span class="fuente-meta">similitud ${(f.similitud * 100).toFixed(1)}%</span>
+      </div>
+      ${contexto ? `<div class="fuente-meta">${escapar(contexto)}</div>` : ""}
+      <div class="fuente-texto">${escapar(f.extracto)}</div>`;
+    detalle.appendChild(caja);
+  }
+  burbuja.appendChild(detalle);
+}
+
+// ---------------------------------------------------------------------------
+// Envío
+// ---------------------------------------------------------------------------
+
+async function enviar(texto) {
+  const pregunta = (texto ?? entrada.value).trim();
+  if (!pregunta || ocupado) return;
+
+  ocupado = true;
+  botonEnvia.disabled = true;
+  entrada.value = "";
+  entrada.style.height = "auto";
+
+  agregarMensaje("user", pregunta);
+  historial.push({ role: "user", content: pregunta });
+  mostrarCargando();
+
+  try {
+    const respuesta = await fetch(`${API}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pregunta, historial: historial.slice(0, -1) })
+    });
+
+    quitarCargando();
+
+    if (!respuesta.ok) {
+      const detalle = await respuesta.json().catch(() => ({}));
+      agregarMensaje("assistant",
+        `No pude procesar la consulta (HTTP ${respuesta.status}).\n\n${detalle.detail ?? ""}`);
+      return;
+    }
+
+    const datos = await respuesta.json();
+    const burbuja = agregarMensaje("assistant", datos.respuesta);
+    agregarFuentes(burbuja, datos);
+    historial.push({ role: "assistant", content: datos.respuesta });
+    alFinal();
+
+  } catch (error) {
+    quitarCargando();
+    agregarMensaje("assistant",
+      `No hay conexión con el servidor.\n\n${error.message}`);
+  } finally {
+    ocupado = false;
+    botonEnvia.disabled = false;
+    entrada.focus();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Estado del sistema
+// ---------------------------------------------------------------------------
+
+async function revisarSalud() {
+  const punto = document.getElementById("punto");
+  const texto = document.getElementById("estado-texto");
+  try {
+    const datos = await (await fetch(`${API}/api/salud`)).json();
+    if (datos.estado === "ok") {
+      punto.className = "punto ok";
+      texto.textContent = `${datos.chunks} fragmentos · ${datos.dimension}D`;
+    } else {
+      punto.className = "punto aviso";
+      texto.textContent = datos.chunks ? "degradado" : "sin datos ingestados";
+    }
+    document.getElementById("estado").title =
+      `Embeddings: ${datos.modelo_embeddings}\nLLM: ${datos.modelo_llm}\nBD: ${datos.base_datos}`;
+  } catch {
+    punto.className = "punto mal";
+    texto.textContent = "servidor no disponible";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Arranque
+// ---------------------------------------------------------------------------
+
+const cajaEjemplos = document.getElementById("ejemplos");
+for (const ejemplo of EJEMPLOS) {
+  const boton = document.createElement("button");
+  boton.className = "ejemplo";
+  boton.textContent = ejemplo;
+  boton.onclick = () => enviar(ejemplo);
+  cajaEjemplos.appendChild(boton);
+}
+
+botonEnvia.onclick = () => enviar();
+
+entrada.addEventListener("keydown", evento => {
+  if (evento.key === "Enter" && !evento.shiftKey) {
+    evento.preventDefault();
+    enviar();
+  }
+});
+
+// Autoajuste de altura del textarea
+entrada.addEventListener("input", () => {
+  entrada.style.height = "auto";
+  entrada.style.height = Math.min(entrada.scrollHeight, 150) + "px";
+});
+
+revisarSalud();
+entrada.focus();
+</script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+TEXTO DE MUESTRA — NO ES EL REGLAMENTO OFICIAL
+
+Este archivo es un fixture inventado para probar el chunker jerárquico sin
+necesidad del PDF real. Imita la estructura del Reglamento SEP R-0 (títulos,
+capítulos, artículos, incisos y numerales) pero su contenido NO tiene validez
+normativa. Sirve para verificar la segmentación antes de gastar llamadas a
+Bedrock. Sustitúyelo por el PDF oficial en data/raw/ para la entrega.
+
+TÍTULO PRIMERO
+DISPOSICIONES GENERALES
+
+El presente ordenamiento es de observancia obligatoria para la comunidad
+estudiantil y regula la relación académica entre la institución y sus alumnos
+de licenciatura y posgrado.
+
+CAPÍTULO I
+DEL OBJETO Y ÁMBITO DE APLICACIÓN
+
+Artículo 1°.- El presente reglamento tiene por objeto establecer las normas que
+rigen el ingreso, la permanencia, la promoción y el egreso de los alumnos de los
+programas de licenciatura y posgrado.
+
+Artículo 2°.- Para efectos de este reglamento se entiende por alumno a toda
+persona que ha cumplido con el proceso de admisión, ha realizado su inscripción
+en el periodo señalado y cuenta con matrícula vigente.
+
+Artículo 3°.- Las disposiciones de este reglamento son aplicables a:
+
+a) Los alumnos inscritos en programas de licenciatura en cualquier modalidad.
+b) Los alumnos inscritos en programas de posgrado, incluyendo especialidad,
+   maestría y doctorado.
+c) Los alumnos en situación de movilidad académica nacional o internacional.
+d) Los aspirantes durante el proceso de admisión, en lo que resulte aplicable.
+
+CAPÍTULO II
+DEL INGRESO Y LA INSCRIPCIÓN
+
+Artículo 4°.- Son requisitos para obtener la calidad de alumno los siguientes:
+
+I. Haber concluido el nivel educativo inmediato anterior y acreditarlo con el
+   certificado correspondiente debidamente legalizado.
+II. Aprobar el examen de admisión y, en su caso, la entrevista que determine la
+   coordinación del programa.
+III. Entregar la documentación completa dentro del plazo publicado en el
+   calendario escolar.
+IV. Cubrir las cuotas de inscripción y colegiatura conforme a las fechas
+   establecidas por la institución.
+V. Firmar la carta compromiso en la que manifiesta conocer y aceptar el
+   contenido del presente reglamento.
+
+Artículo 5°.- La inscripción deberá realizarse dentro de las fechas señaladas en
+el calendario escolar. El alumno que no la efectúe en dicho periodo perderá el
+derecho a cursar el ciclo correspondiente, salvo autorización expresa de la
+dirección académica.
+
+Artículo 6°.- La reinscripción procederá siempre que el alumno no tenga adeudos
+administrativos ni documentales y haya acreditado el número mínimo de créditos
+señalado en el plan de estudios.
+
+TÍTULO SEGUNDO
+DE LA EVALUACIÓN Y LA PERMANENCIA
+
+CAPÍTULO III
+DE LAS EVALUACIONES
+
+Artículo 7°.- Las evaluaciones tienen por finalidad verificar el logro de los
+objetivos de aprendizaje establecidos en cada asignatura y se clasifican en
+evaluación continua, evaluación parcial y evaluación ordinaria.
+
+Artículo 8°.- La escala de calificación es de cero a diez. La calificación
+mínima aprobatoria es de seis punto cero. Las calificaciones se expresan con un
+decimal y no se redondean.
+
+Artículo 9°.- Para tener derecho a la evaluación ordinaria el alumno deberá
+cumplir con lo siguiente:
+
+a) Contar con un mínimo de ochenta por ciento de asistencia en la asignatura.
+b) Estar al corriente en sus obligaciones administrativas al momento de la
+   evaluación.
+c) Haber presentado las evidencias de aprendizaje solicitadas por el docente
+   durante el periodo.
+
+Artículo 10°.- El alumno que no acredite la evaluación ordinaria podrá
+presentar evaluación extraordinaria, siempre que su asistencia haya sido de al
+menos sesenta por ciento y cubra la cuota correspondiente.
+
+Artículo 11°.- Las revisiones de examen deberán solicitarse por escrito ante la
+coordinación del programa dentro de los tres días hábiles siguientes a la
+publicación de la calificación.
+
+CAPÍTULO IV
+DE LAS BAJAS
+
+Artículo 12°.- La baja de una asignatura podrá ser voluntaria o administrativa,
+y en ambos casos deberá quedar registrada en el expediente del alumno.
+
+Artículo 13°.- Procederá la baja definitiva del alumno en los siguientes
+supuestos:
+
+I. Cuando lo solicite de manera expresa y por escrito.
+II. Cuando acumule tres reprobaciones de la misma asignatura.
+III. Cuando exceda el plazo máximo previsto en el plan de estudios para
+   concluir sus créditos.
+IV. Cuando le sea impuesta como sanción conforme al título siguiente.
+
+TÍTULO TERCERO
+DE LAS OBLIGACIONES, DERECHOS Y SANCIONES
+
+CAPÍTULO V
+DE LOS DERECHOS Y OBLIGACIONES
+
+Artículo 14°.- Son derechos de los alumnos, además de los que se desprendan de
+otras disposiciones institucionales, los que a continuación se enuncian, los
+cuales se ejercerán en los términos y con las modalidades que establezcan los
+lineamientos internos de cada programa académico y las autoridades competentes:
+
+I. Recibir la formación académica prevista en el plan y programas de estudio
+   vigentes al momento de su inscripción, impartida por personal académico que
+   cumpla con el perfil establecido por la institución para cada asignatura.
+II. Conocer, al inicio de cada periodo escolar, el programa de la asignatura,
+   los criterios de evaluación, la ponderación de cada evidencia de aprendizaje
+   y el calendario de las evaluaciones parciales y ordinarias correspondientes.
+III. Recibir de manera oportuna la calificación de cada evaluación y solicitar
+   la revisión de la misma conforme al procedimiento y los plazos previstos en
+   el presente reglamento.
+IV. Utilizar las instalaciones, el acervo bibliográfico, los laboratorios, los
+   talleres y los servicios institucionales conforme a los horarios, las
+   políticas de uso y las medidas de seguridad que fije cada área responsable.
+V. Recibir orientación educativa, tutoría académica y acompañamiento
+   psicopedagógico a través de las instancias que la institución destine para
+   tal efecto, en los horarios de atención publicados.
+VI. Obtener la documentación oficial que acredite sus estudios, tales como
+   constancias, historiales académicos, certificados parciales y totales,
+   siempre que se encuentre al corriente en sus obligaciones administrativas.
+VII. Participar en los procesos de movilidad académica, prácticas
+   profesionales, servicio social y programas de vinculación, cumpliendo los
+   requisitos específicos que cada programa establezca.
+VIII. Asociarse libremente y participar en las actividades culturales,
+   deportivas y de representación estudiantil que organice la institución, sin
+   que ello afecte el cumplimiento de sus obligaciones académicas.
+IX. Ser escuchado en audiencia antes de que se le imponga cualquier sanción,
+   ofreciendo las pruebas y alegatos que a su derecho convengan, conforme al
+   procedimiento disciplinario aplicable.
+X. Recibir un trato respetuoso y libre de discriminación por parte de la
+   comunidad universitaria, así como presentar quejas ante la instancia
+   correspondiente cuando considere vulnerado este derecho.
+
+Artículo 15°.- Son obligaciones de los alumnos:
+
+a) Cumplir con las disposiciones del presente reglamento y demás normatividad
+   institucional aplicable.
+b) Cubrir puntualmente las cuotas y colegiaturas en las fechas establecidas.
+c) Conducirse con respeto y honestidad académica en todas las actividades.
+d) Cuidar el mobiliario, el equipo y las instalaciones de la institución.
+e) Portar la credencial institucional vigente dentro de las instalaciones.
+
+CAPÍTULO VI
+DE LAS SANCIONES
+
+Artículo 16°.- Las faltas a este reglamento se sancionarán, según su gravedad,
+con amonestación verbal, amonestación por escrito, suspensión temporal o baja
+definitiva.
+
+Artículo 16° BIS.- La suspensión temporal no podrá exceder de un periodo
+escolar y deberá notificarse por escrito al alumno y a su tutor, cuando este
+último sea aplicable.
+
+Artículo 17°.- El plagio, la suplantación de identidad en evaluaciones y la
+falsificación de documentos se consideran faltas graves y podrán sancionarse
+directamente con baja definitiva.
+
+Artículo 18°.- Toda sanción deberá constar por escrito, estar fundada y
+motivada, y se integrará al expediente del alumno.
+
+ARTÍCULOS TRANSITORIOS
+
+Artículo 19°.- El presente reglamento entrará en vigor al día siguiente de su
+publicación oficial.
+
+Artículo 20°.- Se derogan todas las disposiciones que se opongan al contenido
+del presente ordenamiento.
