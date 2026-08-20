@@ -64,6 +64,14 @@ PISTAS = {
     "ThrottlingException": (
         "Bedrock esta limitando las llamadas. Espera un momento y reintenta."
     ),
+    # Distinto de AccessDenied: aqui los permisos IAM estan bien, pero la
+    # cuenta no tiene habilitado ese modelo en concreto.
+    "is not available for this account": (
+        "Los permisos estan bien, pero la cuenta no tiene acceso a ESE modelo.\n"
+        "  Abre Bedrock -> Model catalog, mira que modelos de Anthropic\n"
+        "  aparecen disponibles y pon uno de esos en BEDROCK_LLM_MODEL_ID.\n"
+        "  Los modelos mas nuevos suelen pedir un formulario de caso de uso."
+    ),
 }
 
 

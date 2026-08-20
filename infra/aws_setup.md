@@ -90,6 +90,15 @@ control de acceso ahora se hace enteramente por IAM y SCPs.
       "Effect": "Allow",
       "Action": ["bedrock-mantle:CreateInference"],
       "Resource": "arn:aws:bedrock-mantle:*:*:project/*"
+    },
+    {
+      "Sid": "ConsultarCatalogoDeModelos",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:ListFoundationModels",
+        "bedrock:GetFoundationModel"
+      ],
+      "Resource": "*"
     }
   ]
 }
