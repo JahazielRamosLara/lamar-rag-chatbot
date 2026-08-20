@@ -1,19 +1,29 @@
+# Requiere Python 3.11 o superior.
+#
+# Las versiones van con `>=` y no con `==` a proposito. Los pines exactos
+# funcionan en la maquina donde se generaron y fallan en las demas: los wheels
+# compilados (psycopg-binary, numpy) se publican por version de Python, y una
+# version vieja simplemente no existe para un Python nuevo. Con `>=`, pip elige
+# el wheel que corresponda a cada integrante del equipo.
+
 # ---- Backend / API ----
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-pydantic==2.10.4
-pydantic-settings==2.7.0
-python-dotenv==1.0.1
+fastapi>=0.115.6
+uvicorn[standard]>=0.34.0
+pydantic>=2.10.4
+pydantic-settings>=2.7.0
+python-dotenv>=1.0.1
 
 # ---- Base de datos (AWS RDS PostgreSQL + pgvector) ----
-asyncpg==0.30.0          # driver async usado por el backend
-psycopg[binary]==3.2.3   # driver sync usado por los scripts de ingesta
-pgvector==0.3.6
+asyncpg>=0.30.0          # driver async usado por el backend
+psycopg[binary]>=3.2.10  # driver sync usado por los scripts de ingesta
+pgvector>=0.3.6
 
-# ---- AWS Bedrock (embeddings Titan + LLM Claude) ----
-boto3==1.35.90
-anthropic[bedrock]==0.125.0  # >=0.125 trae el cliente Mantle de Bedrock y output_config.effort
+# ---- AWS Bedrock (embeddings Titan) + LLM (Claude) ----
+# El extra [bedrock] instala el cliente de Bedrock; desde 0.125 trae ademas el
+# cliente Mantle y output_config.effort.
+boto3>=1.35.90
+anthropic[bedrock]>=0.125.0
 
 # ---- Procesamiento del PDF del reglamento ----
-pdfplumber==0.11.4
-pypdf==5.1.0
+pdfplumber>=0.11.4
+pypdf>=5.1.0
