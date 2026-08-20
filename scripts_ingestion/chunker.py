@@ -86,6 +86,11 @@ RE_TRANSITORIOS = re.compile(
     re.IGNORECASE,
 )
 
+# Fin de oracion, para partir parrafos muy largos sin cortar a media frase.
+# El lookbehind exige minuscula o digito antes del punto para no cortar en
+# abreviaturas ni en ordinales del estilo "Art. 4o." o "Lic. Perez".
+RE_FIN_ORACION = re.compile(r"(?<=[a-záéíóúñ0-9])[.;:]\s+(?=[A-ZÁÉÍÓÚÑ])")
+
 # Ruido tipico del PDF: numeros de pagina sueltos, pies de pagina.
 RE_RUIDO = re.compile(
     r"^\s*(?:p[áa]gina\s+)?\d{1,3}\s*(?:de\s+\d{1,3})?\s*$",
@@ -117,8 +122,43 @@ def _sin_acentos(texto: str) -> str:
     return "".join(c for c in descompuesto if unicodedata.category(c) != "Mn")
 
 
+def entero_a_romano(numero: int) -> str:
+    """Convierte 19 -> 'XIX'. Solo se usa para validar la forma canonica."""
+    tabla = (
+        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+    )
+    salida: list[str] = []
+    for valor, simbolo in tabla:
+        while numero >= valor:
+            salida.append(simbolo)
+            numero -= valor
+    return "".join(salida)
+
+
+def es_romano_probable(token: str) -> bool:
+    """
+    True si el token esta hecho solo de simbolos romanos, aunque este mal
+    escrito. Sirve para distinguir un encabezado con erratas ('XVIX') de una
+    linea de prosa que empieza con 'CAPÍTULO DE...' y no es un encabezado.
+    """
+    token = token.upper().strip()
+    return bool(token) and all(c in VALOR_ROMANO for c in token)
+
+
 def romano_a_entero(romano: str) -> int | None:
-    """Convierte 'XIV' -> 14. Devuelve None si no es un romano valido."""
+    """
+    Convierte 'XIV' -> 14. Devuelve None si no es un romano valido.
+
+    La validacion es estricta: se reconstruye el numero y se compara contra el
+    token original. Sin esto, la lectura sustractiva ingenua acepta formas
+    invalidas y devuelve valores equivocados en silencio. El caso real que lo
+    motivo: el reglamento trae 'Capítulo XVIX' (errata por XIX). Leido de
+    derecha a izquierda da 10-1+5... = 14, o sea que ese capitulo se fusionaba
+    con el 'Capítulo XIV — De la reinscripción' y "dame el capítulo 14"
+    devolvia articulos de dos capitulos distintos.
+    """
     romano = romano.upper().strip()
     if not romano or any(c not in VALOR_ROMANO for c in romano):
         return None
@@ -128,7 +168,9 @@ def romano_a_entero(romano: str) -> int | None:
         valor = VALOR_ROMANO[caracter]
         total = total - valor if valor < previo else total + valor
         previo = max(previo, valor)
-    return total or None
+    if total <= 0 or entero_a_romano(total) != romano:
+        return None  # mal formado: lo resuelve el conteo secuencial del parser
+    return total
 
 
 def ordinal_a_entero(token: str) -> int | None:
@@ -223,6 +265,30 @@ class _Contexto:
     capitulo: str | None = None
     capitulo_num: int | None = None
 
+    # Ultimo numero valido visto de cada nivel. No se reinicia al cambiar de
+    # titulo (la numeracion de capitulos del reglamento es continua), y sirve
+    # para deducir el numero cuando el encabezado viene con errata.
+    ultimo_titulo_num: int = 0
+    ultimo_capitulo_num: int = 0
+
+
+def _numero_de_seccion(token: str, ultimo: int) -> int | None:
+    """
+    Resuelve el numero de un TÍTULO o CAPÍTULO a partir de su identificador.
+
+    Devuelve None solo si el token no parece un identificador de seccion (por
+    ejemplo la prosa 'CAPÍTULO DE LAS SANCIONES...'), en cuyo caso el parser
+    ignora la linea. Si el token si parece romano pero esta mal escrito, se
+    asume que la seccion sigue a la anterior: los reglamentos numeran de forma
+    continua, asi que 'XVIX' despues del XVIII es 19.
+    """
+    numero = ordinal_a_entero(token)
+    if numero is not None:
+        return numero
+    if es_romano_probable(token):
+        return ultimo + 1
+    return None
+
 
 def _formatea_encabezado(etiqueta: str, ident: str, nombre: str) -> str:
     """Arma 'CAPÍTULO III — De las inscripciones'."""
@@ -306,6 +372,68 @@ def _detecta_marcadores(lineas: list[str]) -> tuple[list[str], list[str]]:
     return incisos, numerales
 
 
+def _largo(lineas: list[str]) -> int:
+    return sum(len(l) + 1 for l in lineas)
+
+
+def _parte_por_prosa(lineas: list[str]) -> list[list[str]]:
+    """
+    Plan B para articulos largos que no tienen incisos ni numerales.
+
+    Hay articulos —sobre todo los de sanciones y titulacion— que son varios
+    parrafos corridos de texto. Sin marcadores donde cortar, el bloque entero
+    quedaba en un solo chunk de hasta 4 mil caracteres, y un embedding de ese
+    tamaño promedia tantos temas que deja de parecerse a cualquier pregunta
+    concreta. Aqui se corta primero en frontera de parrafo (linea en blanco) y,
+    si un solo parrafo ya excede el limite, en frontera de oracion.
+    """
+    if _largo(lineas) <= MAX_CHARS:
+        return [lineas]
+
+    # 1. Agrupar en parrafos usando las lineas en blanco como separador.
+    parrafos: list[list[str]] = []
+    actual: list[str] = []
+    for linea in lineas:
+        if linea.strip():
+            actual.append(linea)
+        elif actual:
+            parrafos.append(actual)
+            actual = []
+    if actual:
+        parrafos.append(actual)
+
+    # 2. Un parrafo que por si solo pasa el limite se parte por oraciones.
+    unidades: list[list[str]] = []
+    for parrafo in parrafos:
+        if _largo(parrafo) <= MAX_CHARS:
+            unidades.append(parrafo)
+            continue
+        oraciones = RE_FIN_ORACION.split(" ".join(parrafo))
+        bloque: list[str] = []
+        for oracion in oraciones:
+            # Se cierra ANTES de pasarse, no despues: si no, cada bloque
+            # termina excediendo el limite por la ultima oracion.
+            if bloque and _largo(bloque) + len(oracion) + 1 > MAX_CHARS:
+                unidades.append(bloque)
+                bloque = []
+            bloque.append(oracion)
+        if bloque:
+            unidades.append(bloque)
+
+    # 3. Reagrupar las unidades hasta llenar MAX_CHARS.
+    bloques: list[list[str]] = []
+    actual = []
+    for unidad in unidades:
+        if actual and _largo(actual) + _largo(unidad) > MAX_CHARS:
+            bloques.append(actual)
+            actual = []
+        actual.extend(unidad)
+    if actual:
+        bloques.append(actual)
+
+    return bloques or [lineas]
+
+
 def _parte_articulo_largo(lineas: list[str]) -> list[list[str]]:
     """
     Corta un articulo largo en los puntos donde empieza un inciso o numeral,
@@ -330,6 +458,13 @@ def _parte_articulo_largo(lineas: list[str]) -> list[list[str]]:
 
     if actual:
         bloques.append(actual)
+
+    # Los bloques que siguen pasados de largo no tenian marcadores donde
+    # cortar: se parten por prosa.
+    expandidos: list[list[str]] = []
+    for bloque in bloques:
+        expandidos.extend(_parte_por_prosa(bloque))
+    bloques = expandidos
 
     # Un ultimo bloque diminuto se pega al anterior en vez de quedar suelto.
     if len(bloques) > 1 and sum(len(l) for l in bloques[-1]) < MIN_CHARS:
@@ -428,23 +563,39 @@ def segmentar(texto: str) -> list[Chunk]:
 
     def cerrar_preambulo() -> None:
         nonlocal preambulo, contador_preambulos
-        contenido = "\n".join(preambulo).strip()
+        lineas_preambulo = preambulo
         preambulo = []
-        if len(contenido) < MIN_CHARS:
+        if len("\n".join(lineas_preambulo).strip()) < MIN_CHARS:
             return
+
         contador_preambulos += 1
-        chunks.append(
-            Chunk(
-                chunk_uid=f"preambulo-{contador_preambulos}",
-                tipo="preambulo",
-                contenido=contenido,
-                encabezado=ctx.capitulo or ctx.titulo or "Disposiciones generales",
-                titulo=ctx.titulo,
-                titulo_num=ctx.titulo_num,
-                capitulo=ctx.capitulo,
-                capitulo_num=ctx.capitulo_num,
+        # Un preambulo tambien puede ser largo (el capitulo de sanciones abre
+        # con varias cuartillas antes del primer articulo), asi que se parte
+        # con el mismo criterio de prosa que los articulos.
+        bloques = _parte_por_prosa(lineas_preambulo)
+        total = len(bloques)
+
+        for indice_bloque, bloque in enumerate(bloques):
+            contenido = "\n".join(bloque).strip()
+            if not contenido:
+                continue
+            uid = f"preambulo-{contador_preambulos}"
+            if total > 1:
+                uid += f"-f{indice_bloque + 1}"
+            chunks.append(
+                Chunk(
+                    chunk_uid=uid,
+                    tipo="preambulo",
+                    contenido=contenido,
+                    encabezado=ctx.capitulo or ctx.titulo or "Disposiciones generales",
+                    titulo=ctx.titulo,
+                    titulo_num=ctx.titulo_num,
+                    capitulo=ctx.capitulo,
+                    capitulo_num=ctx.capitulo_num,
+                    fragmento=indice_bloque,
+                    total_fragmentos=total,
+                )
             )
-        )
 
     lineas = [l.rstrip() for l in texto.splitlines()]
     indice = 0
@@ -469,7 +620,9 @@ def segmentar(texto: str) -> list[Chunk]:
             continue
 
         # --- TÍTULO ---
-        if (m := RE_TITULO.match(linea)) and ordinal_a_entero(m.group(1)) is not None:
+        if (m := RE_TITULO.match(linea)) and (
+            (num := _numero_de_seccion(m.group(1), ctx.ultimo_titulo_num)) is not None
+        ):
             cerrar_articulo()
             cerrar_preambulo()
             nombre = m.group(2).strip()
@@ -477,13 +630,16 @@ def segmentar(texto: str) -> list[Chunk]:
                 nombre, consumidas = _nombre_en_siguiente_linea(lineas, indice - 1)
                 indice += consumidas
             ctx.titulo = _formatea_encabezado("TÍTULO", m.group(1), nombre)
-            ctx.titulo_num = ordinal_a_entero(m.group(1))
+            ctx.titulo_num = num
+            ctx.ultimo_titulo_num = num
             # Un titulo nuevo invalida el capitulo anterior.
             ctx.capitulo, ctx.capitulo_num = None, None
             continue
 
         # --- CAPÍTULO ---
-        if (m := RE_CAPITULO.match(linea)) and ordinal_a_entero(m.group(1)) is not None:
+        if (m := RE_CAPITULO.match(linea)) and (
+            (num := _numero_de_seccion(m.group(1), ctx.ultimo_capitulo_num)) is not None
+        ):
             cerrar_articulo()
             cerrar_preambulo()
             nombre = m.group(2).strip()
@@ -491,7 +647,8 @@ def segmentar(texto: str) -> list[Chunk]:
                 nombre, consumidas = _nombre_en_siguiente_linea(lineas, indice - 1)
                 indice += consumidas
             ctx.capitulo = _formatea_encabezado("CAPÍTULO", m.group(1), nombre)
-            ctx.capitulo_num = ordinal_a_entero(m.group(1))
+            ctx.capitulo_num = num
+            ctx.ultimo_capitulo_num = num
             continue
 
         # --- ARTÍCULO ---
