@@ -31,6 +31,13 @@ PISTAS = {
         "El usuario IAM no tiene permiso de bedrock:InvokeModel sobre este "
         "modelo.\n  Revisa la politica IAM de la Parte 1 de infra/aws_setup.md."
     ),
+    # Claude entra por el endpoint Mantle, que es un servicio IAM distinto de
+    # bedrock-runtime: dar bedrock:InvokeModel no alcanza para este.
+    "bedrock-mantle": (
+        "Falta el permiso bedrock-mantle:CreateInference.\n"
+        "  Es una accion aparte de bedrock:InvokeModel; la politica completa\n"
+        "  esta en la Parte 1 de infra/aws_setup.md."
+    ),
     "ValidationException": (
         "El ID del modelo no es valido en esta region.\n"
         "  Revisa BEDROCK_EMBED_MODEL_ID / BEDROCK_LLM_MODEL_ID en tu .env."

@@ -72,16 +72,48 @@ control de acceso ahora se hace enteramente por IAM y SCPs.
 ```json
 {
   "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Action": ["bedrock:InvokeModel"],
-    "Resource": [
-      "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2*",
-      "arn:aws:bedrock:*::foundation-model/anthropic.claude*"
-    ]
-  }]
+  "Statement": [
+    {
+      "Sid": "InvocarModelosFundacionales",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2*",
+        "arn:aws:bedrock:*::foundation-model/anthropic.claude*"
+      ]
+    },
+    {
+      "Sid": "EndpointMantleDeAnthropic",
+      "Effect": "Allow",
+      "Action": ["bedrock-mantle:CreateInference"],
+      "Resource": "arn:aws:bedrock-mantle:*:*:project/*"
+    }
+  ]
 }
 ```
+
+Son **dos permisos distintos** porque cada modelo entra por una puerta
+diferente, y es fácil quedarse a medias:
+
+| Modelo | Ruta | Acción requerida |
+|---|---|---|
+| Titan (embeddings) | `bedrock-runtime` → `InvokeModel` | `bedrock:InvokeModel` |
+| Claude (respuestas) | endpoint Mantle | `bedrock-mantle:CreateInference` |
+
+Con solo la primera, la ingesta corre pero el chat devuelve 403; con solo la
+segunda, pasa lo contrario.
+
+Para adjuntarla: **IAM → Users → tu usuario → Add permissions → Create inline
+policy → pestaña JSON**, pega el bloque, nómbrala `bedrock-reglamento-lamar` y
+guarda.
+
+> 💡 Si tu cuenta es de AWS Academy o tiene SCPs que bloquean crear políticas,
+> pide que te adjunten la política administrada **`AmazonBedrockFullAccess`**:
+> cubre las dos acciones de un golpe. Es más amplia de lo necesario, pero para
+> una práctica académica es aceptable.
 
 > 📸 **Captura 2:** la política IAM adjunta al usuario.
 
