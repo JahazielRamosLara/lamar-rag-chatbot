@@ -385,8 +385,7 @@ alucina** cuando el reglamento no cubre el tema.
 
 ## 10. Integrantes
 
-| Nombre | Matrícula | Rol |
-|---|---|---|
-| _(completar)_ | | |
-| _(completar)_ | | |
-| _(completar)_ | | |
+| Nombre | Matrícula |
+|---|---|
+| Jahaziel Osmar Ramos Lara | 000050444 |
+| Keb Emiliano Moreno Alcaráz | 000049870 |
