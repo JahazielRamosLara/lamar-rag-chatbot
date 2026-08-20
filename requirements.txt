@@ -12,7 +12,7 @@ pgvector==0.3.6
 
 # ---- AWS Bedrock (embeddings Titan + LLM Claude) ----
 boto3==1.35.90
-anthropic[bedrock]==0.42.0
+anthropic[bedrock]==0.125.0  # >=0.125 trae el cliente Mantle de Bedrock y output_config.effort
 
 # ---- Procesamiento del PDF del reglamento ----
 pdfplumber==0.11.4

@@ -10,44 +10,64 @@ Guía paso a paso de la infraestructura de la práctica. Cada sección indica
 
 ---
 
-## Parte 1 — AWS Bedrock (habilitar los modelos)
+## Parte 1 — AWS Bedrock (acceso a los modelos)
 
-Bedrock no da acceso a los modelos por defecto; hay que solicitarlo una vez.
+> **La página *Model access* fue retirada.** Antes había que marcar cada modelo
+> a mano y esperar aprobación. Hoy los modelos serverless **se habilitan solos
+> la primera vez que se invocan** en tu cuenta, en cualquier región comercial.
+> Si abres *Acceso a modelos* en la consola verás únicamente el aviso
+> "Model access page has been retired": es lo esperado, no un error.
 
-1. Entra a la consola de AWS y selecciona una región donde Bedrock esté
-   disponible. **`us-east-1` (N. Virginia)** es la más completa; usa la misma
-   región en todo el proyecto.
-2. Busca el servicio **Amazon Bedrock**.
-3. En el menú lateral, abre **Model access** (Acceso a modelos).
-4. Pulsa **Modify model access** / **Enable specific models** y marca:
-   - `Amazon · Titan Text Embeddings V2` — genera los vectores
-   - `Anthropic · Claude` (Sonnet o Haiku) — redacta las respuestas
-5. Envía la solicitud. Titan se aprueba al instante; los modelos de Anthropic
-   piden un formulario corto de caso de uso y suelen aprobarse en minutos.
-6. Espera a que ambos aparezcan como **Access granted**.
+Lo único que sigue haciendo falta:
 
-> 📸 **Captura 1:** la pantalla de *Model access* con ambos modelos en
-> "Access granted".
+1. Usa **`us-east-1` (N. Virginia)** en todo el proyecto. Si el selector de
+   región no responde, es porque estás en un servicio global (IAM, Facturación);
+   entra directo por URL añadiendo `?region=us-east-1`.
+2. **Modelos de Anthropic:** la primera vez que los uses, AWS puede pedirte un
+   formulario corto de caso de uso. Se dispara al abrir el modelo en
+   **Model catalog → Claude → Open in Playground** y mandar un mensaje de
+   prueba. Contesta algo como *"proyecto académico: chatbot de consulta sobre
+   un reglamento universitario"*. Una vez aceptado queda habilitado para toda
+   la cuenta.
+3. **Titan Text Embeddings V2** no pide nada: se habilita en la primera llamada.
 
-### Verificar desde la terminal
-
-```bash
-aws bedrock list-foundation-models --region us-east-1 \
-  --query "modelSummaries[?contains(modelId,'titan-embed-text-v2')].modelId"
-```
+> 📸 **Captura 1:** el *Model catalog* mostrando Claude y Titan disponibles, o
+> el playground de Claude respondiendo a un mensaje. Sustituye a la captura de
+> "Access granted", que ya no existe.
 
 ### Credenciales
 
-La forma más simple es el AWS CLI:
+`boto3` lee las credenciales de `~/.aws/credentials`. Puedes crearlas con el
+AWS CLI (`aws configure`) o, si prefieres no instalarlo, escribiendo los dos
+archivos a mano — es lo que boto3 termina leyendo de todos modos:
 
-```bash
-aws configure
-# AWS Access Key ID:     ...
-# AWS Secret Access Key: ...
-# Default region name:   us-east-1
+`C:\Users\TU-USUARIO\.aws\credentials`
+
+```ini
+[default]
+aws_access_key_id = AKIA...
+aws_secret_access_key = ...
 ```
 
-El usuario IAM necesita, como mínimo, esta política:
+`C:\Users\TU-USUARIO\.aws\config`
+
+```ini
+[default]
+region = us-east-1
+```
+
+Las llaves se generan en **IAM → Users → tu usuario → Security credentials →
+Create access key → Command Line Interface (CLI)**. El secreto se muestra una
+sola vez: cópialo en ese momento.
+
+> ⚠️ Nunca subas estas llaves al repositorio. Viven fuera del proyecto, en tu
+> carpeta de usuario, y no las toca `.gitignore` porque ni siquiera están aquí.
+
+### Permisos IAM
+
+El usuario necesita, como mínimo, esta política. Que la página de *Model access*
+haya desaparecido no significa que cualquiera pueda invocar los modelos: el
+control de acceso ahora se hace enteramente por IAM y SCPs.
 
 ```json
 {
@@ -64,6 +84,19 @@ El usuario IAM necesita, como mínimo, esta política:
 ```
 
 > 📸 **Captura 2:** la política IAM adjunta al usuario.
+
+### Verificar que Bedrock responde
+
+En lugar de confiar en lo que muestre la consola, invoca los dos modelos desde
+el proyecto. Es la única prueba que importa, porque es exactamente lo que hará
+la ingesta:
+
+```bash
+python scripts_ingestion/probar_bedrock.py
+```
+
+Si Titan devuelve un vector de 1024 dimensiones y Claude contesta, Bedrock está
+listo y puedes pasar a RDS.
 
 ---
 
@@ -339,7 +372,7 @@ Bedrock no requiere limpieza: se cobra únicamente por invocación.
 
 | # | Captura | Rúbrica |
 |---|---|---|
-| 1 | Bedrock — *Model access* con Titan y Claude habilitados | Infraestructura AWS |
+| 1 | Bedrock — Model catalog o playground de Claude respondiendo | Infraestructura AWS |
 | 2 | Política IAM del usuario | Infraestructura AWS |
 | 3 | Instancia RDS *Available* con su endpoint | Infraestructura AWS |
 | 4 | Security group con el puerto 5432 abierto | Infraestructura AWS |

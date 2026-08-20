@@ -164,11 +164,21 @@ def generar_respuesta(system: str, mensajes: list[dict]) -> str:
     try:
         respuesta = cliente.messages.create(**parametros)
     except Exception as error:
-        # Modelos que no aceptan `effort` responden 400; reintentamos sin él.
-        if _soporta_effort and "output_config" in parametros and "400" in str(error):
+        # `output_config` puede fallar por dos motivos distintos, y hay que
+        # cubrir los dos o el chat se cae en la primera consulta:
+        #   * TypeError  -> el SDK instalado es anterior al parametro y ni
+        #                   siquiera lo reconoce (no llega a salir a la red).
+        #   * HTTP 400   -> el SDK lo manda pero el modelo no lo acepta.
+        rechazo_de_effort = (
+            _soporta_effort
+            and "output_config" in parametros
+            and (isinstance(error, TypeError) or "400" in str(error))
+        )
+        if rechazo_de_effort:
             log.warning(
-                "El modelo %s no acepta output_config.effort; se desactiva.",
+                "output_config.effort no se pudo usar con %s (%s); se desactiva.",
                 settings.bedrock_llm_model_id,
+                type(error).__name__,
             )
             _soporta_effort = False
             parametros.pop("output_config")
