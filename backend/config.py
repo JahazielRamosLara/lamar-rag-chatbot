@@ -28,12 +28,21 @@ class Settings(BaseSettings):
     # ---------- AWS ----------
     aws_region: str = "us-east-1"
 
-    # ---------- Bedrock ----------
+    # ---------- Embeddings (siempre Bedrock / Titan) ----------
     bedrock_embed_model_id: str = "amazon.titan-embed-text-v2:0"
     embed_dim: int = 1024
+
+    # ---------- LLM ----------
+    # De donde sale el modelo que redacta la respuesta final:
+    #   'bedrock'   -> Claude servido por AWS Bedrock (endpoint Mantle)
+    #   'anthropic' -> API directa de Anthropic, con su propia API key
+    # Los embeddings NO dependen de esto: Titan siempre va por Bedrock, asi que
+    # la parte vectorial de la practica se queda en AWS pase lo que pase.
+    llm_provider: str = "bedrock"
+    anthropic_api_key: str = ""
     bedrock_llm_model_id: str = "anthropic.claude-sonnet-5"
     llm_effort: str = "low"
-    llm_max_tokens: int = 1500
+    llm_max_tokens: int = 4000
 
     # ---------- PostgreSQL (AWS RDS) ----------
     pghost: str = "localhost"
@@ -51,6 +60,23 @@ class Settings(BaseSettings):
     # ---------- Servidor ----------
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+
+    @property
+    def llm_model_id(self) -> str:
+        """
+        El ID del modelo tal como lo espera el proveedor activo.
+
+        Es el mismo modelo con dos nombres: Bedrock lo pide con el prefijo del
+        proveedor (`anthropic.claude-sonnet-5`) y la API directa lo pide sin el
+        (`claude-sonnet-5`). Normalizarlo aqui permite cambiar LLM_PROVIDER en
+        el .env sin tener que reescribir tambien el ID del modelo.
+        """
+        modelo = self.bedrock_llm_model_id.strip()
+        if self.llm_provider == "anthropic":
+            return modelo.removeprefix("anthropic.")
+        if not modelo.startswith("anthropic."):
+            return f"anthropic.{modelo}"
+        return modelo
 
     @property
     def dsn(self) -> str:

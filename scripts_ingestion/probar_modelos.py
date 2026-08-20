@@ -111,7 +111,7 @@ def probar_candidatos() -> str | None:
 
 def main() -> int:
     print(f"Region: {settings.aws_region}")
-    print(f"Modelo actual en .env: {settings.bedrock_llm_model_id}\n")
+    print(f"Modelo actual en .env: {settings.llm_model_id}\n")
 
     enumerar_catalogo()
     ganador = probar_candidatos()

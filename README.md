@@ -39,7 +39,7 @@ Alumnos de Licenciaturas y Posgrados (SEP R-0)**.
 | Backend API | Python 3.12 + FastAPI + asyncpg | Enrutamiento de intención, búsqueda híbrida y orquestación del RAG |
 | Frontend | HTML + CSS + Fetch API (sin build) | Interfaz de chat con historial, indicador de carga y fuentes citadas |
 | Embeddings | AWS Bedrock — `amazon.titan-embed-text-v2:0` | Vectores de 1024 dimensiones, normalizados |
-| LLM | AWS Bedrock — Anthropic Claude | Sintetiza la respuesta final a partir del contexto recuperado |
+| LLM | Anthropic Claude, vía AWS Bedrock o API directa (`LLM_PROVIDER`) | Sintetiza la respuesta final a partir del contexto recuperado |
 
 ---
 

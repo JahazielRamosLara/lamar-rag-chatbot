@@ -52,11 +52,11 @@ def _get_runtime():
 
 def _get_claude():
     """
-    Cliente Anthropic apuntando a Bedrock.
+    Cliente de Claude, segun LLM_PROVIDER.
 
-    El SDK expone el cliente moderno (`AnthropicBedrockMantle`) y el anterior
-    (`AnthropicBedrock`); tomamos el que exista en la version instalada para no
-    amarrar el proyecto a una version exacta del paquete.
+    Los dos clientes exponen la misma interfaz `messages.create`, asi que el
+    resto del proyecto no se entera de cual esta activo; lo unico que cambia es
+    el nombre del modelo, y de eso se encarga `settings.llm_model_id`.
     """
     global _claude
     if _claude is not None:
@@ -66,17 +66,31 @@ def _get_claude():
         if _claude is None:
             import anthropic
 
-            for nombre in ("AnthropicBedrockMantle", "AnthropicBedrock"):
-                cls = getattr(anthropic, nombre, None)
-                if cls is not None:
-                    _claude = cls(aws_region=settings.aws_region)
-                    log.info("Cliente Bedrock de Anthropic: %s", nombre)
-                    break
+            if settings.llm_provider == "anthropic":
+                if not settings.anthropic_api_key:
+                    raise RuntimeError(
+                        "LLM_PROVIDER=anthropic pero ANTHROPIC_API_KEY esta vacia. "
+                        "Genera una key en https://console.anthropic.com y ponla "
+                        "en el .env."
+                    )
+                _claude = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+                log.info("Cliente de Anthropic: API directa")
             else:
-                raise RuntimeError(
-                    "El paquete `anthropic` instalado no trae cliente de Bedrock. "
-                    "Instala con: pip install 'anthropic[bedrock]'"
-                )
+                # El SDK expone el cliente moderno (`AnthropicBedrockMantle`) y
+                # el anterior (`AnthropicBedrock`); tomamos el que exista en la
+                # version instalada para no amarrar el proyecto a una version
+                # exacta del paquete.
+                for nombre in ("AnthropicBedrockMantle", "AnthropicBedrock"):
+                    cls = getattr(anthropic, nombre, None)
+                    if cls is not None:
+                        _claude = cls(aws_region=settings.aws_region)
+                        log.info("Cliente de Anthropic: Bedrock (%s)", nombre)
+                        break
+                else:
+                    raise RuntimeError(
+                        "El paquete `anthropic` instalado no trae cliente de "
+                        "Bedrock. Instala con: pip install 'anthropic[bedrock]'"
+                    )
     return _claude
 
 
@@ -151,7 +165,7 @@ def generar_respuesta(system: str, mensajes: list[dict]) -> str:
     cliente = _get_claude()
 
     parametros: dict = {
-        "model": settings.bedrock_llm_model_id,
+        "model": settings.llm_model_id,
         "max_tokens": settings.llm_max_tokens,
         "system": system,
         "messages": mensajes,
@@ -177,7 +191,7 @@ def generar_respuesta(system: str, mensajes: list[dict]) -> str:
         if rechazo_de_effort:
             log.warning(
                 "output_config.effort no se pudo usar con %s (%s); se desactiva.",
-                settings.bedrock_llm_model_id,
+                settings.llm_model_id,
                 type(error).__name__,
             )
             _soporta_effort = False

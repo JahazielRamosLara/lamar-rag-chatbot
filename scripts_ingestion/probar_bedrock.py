@@ -64,6 +64,19 @@ PISTAS = {
     "ThrottlingException": (
         "Bedrock esta limitando las llamadas. Espera un momento y reintenta."
     ),
+    # --- Errores de la API directa de Anthropic (LLM_PROVIDER=anthropic) ---
+    "ANTHROPIC_API_KEY esta vacia": (
+        "Pon tu key en ANTHROPIC_API_KEY dentro del .env.\n"
+        "  Se genera en https://console.anthropic.com -> API Keys."
+    ),
+    "authentication_error": (
+        "La ANTHROPIC_API_KEY no es valida.\n"
+        "  Revisa que la copiaste completa, sin espacios ni comillas."
+    ),
+    "credit balance is too low": (
+        "La cuenta de Anthropic no tiene saldo.\n"
+        "  Agrega credito en console.anthropic.com -> Billing."
+    ),
     # Distinto de AccessDenied: aqui los permisos IAM estan bien, pero la
     # cuenta no tiene habilitado ese modelo en concreto.
     "is not available for this account": (
@@ -114,7 +127,7 @@ def probar_embeddings() -> bool:
 def probar_llm() -> bool:
     from backend.bedrock import generar_respuesta
 
-    print(f"\n[2/2] Claude ({settings.bedrock_llm_model_id})")
+    print(f"\n[2/2] Claude ({settings.llm_model_id})")
     try:
         texto = generar_respuesta(
             system="Responde en una sola frase corta, en español.",

@@ -138,7 +138,7 @@ async def salud() -> SaludResponse:
         base_datos=estado_bd,
         chunks=stats["chunks"],
         modelo_embeddings=settings.bedrock_embed_model_id,
-        modelo_llm=settings.bedrock_llm_model_id,
+        modelo_llm=settings.llm_model_id,
         dimension=stats["dimension"],
     )
 
