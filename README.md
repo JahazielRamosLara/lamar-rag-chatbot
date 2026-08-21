@@ -63,7 +63,9 @@ lamar-rag-chatbot/
 │   ├── pdf_extract.py          Extracción y limpieza del PDF
 │   ├── chunker.py              Segmentación jerárquica (títulos/capítulos/artículos)
 │   ├── ingest.py               Pipeline completo: PDF → chunks → embeddings → BD
-│   └── probar_chunker.py       Verificación de la segmentación sin AWS ni BD
+│   ├── probar_chunker.py       Verificación de la segmentación sin AWS ni BD
+│   ├── probar_bedrock.py       Verifica que Titan y Claude respondan desde esta cuenta
+│   └── probar_modelos.py       Averigua qué modelos de Claude acepta invocar la cuenta de Bedrock
 │
 ├── infra/
 │   ├── schema.sql              Tabla, extensión pgvector e índices
@@ -375,15 +377,7 @@ alucina** cuando el reglamento no cubre el tema.
 
 ---
 
-## 9. Entregables de la práctica
-
-- [x] Repositorio con `/backend`, `/frontend`, `/scripts_ingestion` y este README
-- [ ] Documento de evidencias en PDF (capturas de AWS, de la BD y de 5+ consultas)
-- [ ] Video demostrativo de máximo 4 minutos
-
----
-
-## 10. Integrantes
+## 9. Integrantes
 
 | Nombre | Matrícula |
 |---|---|
